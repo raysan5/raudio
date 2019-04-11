@@ -39,7 +39,6 @@
 #include "raudio.h"             // raudio library
 
 #include <stdio.h>              // Required for: printf()
-#include <time.h>               // Required for: clock()
 
 #if defined(_WIN32)
     #include <conio.h>          // Windows only, no stardard library
@@ -56,8 +55,6 @@
 //----------------------------------------------------------------------------------
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
-static void WaitTime(int ms);       // Simple time wait in milliseconds
-static void PlayWaveCLI(Wave wave); // Play provided wave through CLI
 #if !defined(_WIN32)
 static int kbhit(void);             // Check if a key has been pressed
 static char getch();                // Get pressed character
@@ -68,13 +65,43 @@ static char getch();                // Get pressed character
 //------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-    // Play audio file if provided
-    if (argc > 1)
+    // Initialization
+    //--------------------------------------------------------------------------------------
+    static unsigned char key;
+
+    InitAudioDevice();
+
+    Sound fxWav = LoadSound("resources/weird.wav");         // Load WAV audio file
+    Sound fxOgg = LoadSound("resources/tanatana.ogg");      // Load OGG audio file
+
+    Music music = LoadMusicStream("resources/guitar_noodling.ogg");
+    PlayMusicStream(music);
+
+    printf("\nPress s or d to play sounds...\n");
+    //--------------------------------------------------------------------------------------
+
+    // Main loop
+    while (key != KEY_ESCAPE)
     {
-        Wave wave = LoadWave(argv[0]);  // Load audio (WAV, OGG, FLAC, MP3)
-        PlayWaveCLI(wave);              // Play loaded audio
-        UnloadWave(wave);               // Unload audio data
+        if (kbhit()) key = getch();
+
+        if ((key == 's') || (key == 'S')) PlaySound(fxWav);
+        if ((key == 'd') || (key == 'D')) PlaySound(fxOgg);
+        
+        key = 0;
+
+        UpdateMusicStream(music);
     }
+
+    // De-Initialization
+    //--------------------------------------------------------------------------------------
+    UnloadSound(fxWav);         // Unload sound data
+    UnloadSound(fxOgg);         // Unload sound data
+
+    UnloadMusicStream(music);   // Unload music stream data
+
+    CloseAudioDevice();
+    //--------------------------------------------------------------------------------------
 
     return 0;
 }
@@ -82,77 +109,6 @@ int main(int argc, char *argv[])
 //----------------------------------------------------------------------------------
 // Module Functions Definition
 //----------------------------------------------------------------------------------
-
-// Simple time wait in milliseconds
-static void WaitTime(int ms)
-{
-    if (ms > 0)
-    {
-        int currentTime = clock()*1000/CLOCKS_PER_SEC;  // Current time in milliseconds
-        int totalTime = currentTime + ms;               // Total required time in ms to return from this timeout
-
-        int percent = 0;
-        int prevPercent = percent;
-
-        // Wait until current ms time matches total ms time
-        while (currentTime <= totalTime)
-        {
-            // Check for key pressed to stop playing
-            if (kbhit())
-            {
-                int key = getch();
-                if ((key == 13) || (key == 27)) break;    // KEY_ENTER || KEY_ESCAPE
-            }
-
-            currentTime = clock()*1000/CLOCKS_PER_SEC;
-
-            // Print console time bar
-            percent = (int)(((float)currentTime/totalTime)*100.0f);
-
-            if (percent != prevPercent)
-            {
-                printf("\r[");
-                for (int j = 0; j < 50; j++)
-                {
-                    if (j < percent/2) printf("=");
-                    else printf(" ");
-                }
-                printf("] [%02i%%]", percent);
-
-                prevPercent = percent;
-            }
-        }
-
-        printf("\n\n");
-    }
-}
-
-// Play provided wave through CLI
-static void PlayWaveCLI(Wave wave)
-{
-    float waveTimeMs = (float)wave.sampleCount*1000.0/(wave.sampleRate*wave.channels);
-
-    InitAudioDevice();                  // Init audio device
-    Sound fx = LoadSoundFromWave(wave); // Load audio wave
-
-    printf("\n//////////////////////////////////////////////////////////////////////////////////\n");
-    printf("//                                                                              //\n");
-    printf("// raudio CLI audio player                                                      //\n");
-    printf("//                                                                              //\n");
-    printf("// more info and bugs-report: github.com/raysan5/raudio                         //\n");
-    printf("//                                                                              //\n");
-    printf("// Copyright (c) 2019 Ramon Santamaria (@raysan5)                               //\n");
-    printf("//                                                                              //\n");
-    printf("//////////////////////////////////////////////////////////////////////////////////\n\n");
-
-    printf("Playing sound [%.2f sec.]. Press ENTER to finish.\n", waveTimeMs/1000.0f);
-
-    PlaySound(fx);                      // Play sound
-    WaitTime(waveTimeMs);               // Wait while audio is playing
-    UnloadSound(fx);                    // Unload sound data
-    CloseAudioDevice();                 // Close audio device
-}
-
 #if !defined(_WIN32)
 // Check if a key has been pressed
 static int kbhit(void)
