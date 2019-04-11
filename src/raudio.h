@@ -10,17 +10,13 @@
 *       - Manage mixing channels
 *       - Manage raw audio context
 *
-*   LIMITATIONS (only OpenAL Soft):
-*       Only up to two channels supported: MONO and STEREO (for additional channels, use AL_EXT_MCFORMATS)
-*       Only the following sample sizes supported: 8bit PCM, 16bit PCM, 32-bit float PCM (using AL_EXT_FLOAT32)
-*
 *   DEPENDENCIES:
-*       mini_al     - Audio device/context management (https://github.com/dr-soft/mini_al)
-*       stb_vorbis  - OGG audio files loading (http://www.nothings.org/stb_vorbis/)
-*       jar_xm      - XM module file loading
-*       jar_mod     - MOD audio file loading
-*       dr_flac     - FLAC audio file loading
-*       dr_mp3      - MP3 audio file loading
+*       miniaudio.h  - Audio device management lib (https://github.com/dr-soft/miniaudio)
+*       stb_vorbis.h - Ogg audio files loading (http://www.nothings.org/stb_vorbis/)
+*       dr_mp3.h     - MP3 audio file loading (https://github.com/mackron/dr_libs)
+*       dr_flac.h    - FLAC audio file loading (https://github.com/mackron/dr_libs)
+*       jar_xm.h     - XM module file loading
+*       jar_mod.h    - MOD audio file loading
 *
 *   CONTRIBUTORS:
 *       David Reid (github: @mackron) (Nov. 2017):
