@@ -487,7 +487,13 @@ void InitAudioDevice(void)
     ma_context_config contextConfig = ma_context_config_init();
     contextConfig.logCallback = OnLog;
     
+    #ifdef __ANDROID__
+    ma_backend android_opensl_backend[] = { ma_backend_opensl };
+    ma_result result = ma_context_init(android_opensl_backend, 1, &contextConfig, &context);
+    #else 
     ma_result result = ma_context_init(NULL, 0, &contextConfig, &context);
+    #endif
+    
     if (result != MA_SUCCESS)
     {
         TraceLog(LOG_ERROR, "Failed to initialize audio context");
