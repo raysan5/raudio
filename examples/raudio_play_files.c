@@ -7,17 +7,26 @@
 *   DEPENDENCIES:
 *       raudio - A simple and easy-to-use audio library based on miniaudio
 *
+*   raudio DEPENDENCIES:
+*       miniaudio.h  - Audio device management lib (https://github.com/dr-soft/miniaudio)
+*       stb_vorbis.h - Ogg audio files loading (http://www.nothings.org/stb_vorbis/)
+*       dr_wav.h     - WAV audio file loading (https://github.com/mackron/dr_libs)
+*       dr_mp3.h     - MP3 audio file loading (https://github.com/mackron/dr_libs)
+*       dr_flac.h    - FLAC audio file loading (https://github.com/mackron/dr_libs)
+*       jar_xm.h     - XM module file loading
+*       jar_mod.h    - MOD audio file loading
+*
 *   COMPILATION:
 *       gcc -o raudio_cmd_player.exe raudio_cmd_player.c ..\src\raudio.c /
-*           -I..\src -I..\src\external -L. -Wall -std=c99  /
-*           -DRAUDIO_STANDALONE -DSUPPORT_FILEFORMAT_WAV -DSUPPORT_FILEFORMAT_OGG
+*           -I..\..\src -I..\..\src\external -L. -Wall -std=c99 -DRAUDIO_STANDALONE / 
+*           -DSUPPORT_FILEFORMAT_WAV -DSUPPORT_FILEFORMAT_OGG -DSUPPORT_FILEFORMAT_MP3
 *
 *   LICENSE: zlib/libpng
 *
 *   This example is licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software:
 *
-*   Copyright (c) 2014-2019 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2014-2020 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -67,17 +76,17 @@ int main(int argc, char *argv[])
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-    static unsigned char key;
+    static unsigned char key = 0;
 
     InitAudioDevice();
 
-    Sound fxWav = LoadSound("resources/weird.wav");         // Load WAV audio file
-    Sound fxOgg = LoadSound("resources/tanatana.ogg");      // Load OGG audio file
+    Sound fxWav = LoadSound("resources/weird.wav");       // Load WAV audio file
+    Sound fxOgg = LoadSound("resources/target.ogg");      // Load OGG audio file
 
-    Music music = LoadMusicStream("resources/guitar_noodling.ogg");
+    Music music = LoadMusicStream("resources/country.mp3");
     PlayMusicStream(music);
 
-    printf("\nPress s or d to play sounds...\n");
+    printf("\nPress s or d to play sounds, ESC to stop...\n");
     //--------------------------------------------------------------------------------------
 
     // Main loop
