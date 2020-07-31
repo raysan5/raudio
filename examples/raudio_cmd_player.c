@@ -1,15 +1,15 @@
 /*******************************************************************************************
 *
-*   raudio example - Using raudio library to paly some audios
+*   raudio example - Using raudio library to play some audios
 *
-*   NOTE: This example does not require any graphic device, it runs directly on console.
+*   NOTE: This example does not require any graphic device, it runs directly on the console.
 *
 *   DEPENDENCIES:
 *       raudio - A simple and easy-to-use audio library based on miniaudio
 *
 *   COMPILATION:
 *       gcc -o raudio_cmd_player.exe raudio_cmd_player.c ..\src\raudio.c /
-*           -I..\src -I..\src\external -L. -Wall -std=c99  / 
+*           -I..\src -I..\src\external -L. -Wall -std=c99  /
 *           -DRAUDIO_STANDALONE -DSUPPORT_FILEFORMAT_WAV -DSUPPORT_FILEFORMAT_OGG
 *
 *   LICENSE: zlib/libpng
@@ -68,10 +68,10 @@ static char getch();                // Get pressed character
 //------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-    // Play audio file if provided
+    // Play audio file if provided (argv[0] is the program itself)
     if (argc > 1)
     {
-        Wave wave = LoadWave(argv[0]);  // Load audio (WAV, OGG, FLAC, MP3)
+        Wave wave = LoadWave(argv[1]);  // Load audio (WAV, OGG, FLAC, MP3)
         PlayWaveCLI(wave);              // Play loaded audio
         UnloadWave(wave);               // Unload audio data
     }
