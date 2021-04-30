@@ -1,6 +1,6 @@
 /**********************************************************************************************
 *
-*   raudio - A simple and easy-to-use audio library based on miniaudio
+*   raudio v1.0 - A simple and easy-to-use audio library based on miniaudio
 *
 *   FEATURES:
 *       - Manage audio device (init/close)
@@ -31,7 +31,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2020 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2014-2021 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -164,6 +164,7 @@ float *GetWaveData(Wave wave);                                  // Get samples d
 
 // Music management functions
 Music LoadMusicStream(const char *fileName);                    // Load music stream from file
+Music LoadMusicStreamFromMemory(const char *fileType, unsigned char* data, int dataSize); // Load module music from data
 void UnloadMusicStream(Music music);                            // Unload music stream
 void PlayMusicStream(Music music);                              // Start music playing
 void UpdateMusicStream(Music music);                            // Updates buffers for music streaming
