@@ -130,7 +130,7 @@ static void WaitTime(int ms)
 // Play provided wave through CLI
 static void PlayWaveCLI(Wave wave)
 {
-    float waveTimeMs = (float)wave.sampleCount*1000.0/(wave.sampleRate*wave.channels);
+    float waveTimeMs = (float)wave.frameCount*1000.0/(wave.sampleRate*wave.channels);
 
     InitAudioDevice();                  // Init audio device
     Sound fx = LoadSoundFromWave(wave); // Load audio wave
