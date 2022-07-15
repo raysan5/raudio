@@ -1,6 +1,6 @@
 /**********************************************************************************************
 *
-*   raudio v1.0 - A simple and easy-to-use audio library based on miniaudio
+*   raudio v1.1 - A simple and easy-to-use audio library based on miniaudio
 *
 *   FEATURES:
 *       - Manage audio device (init/close)
@@ -31,7 +31,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2021 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2014-2022 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -56,6 +56,9 @@
 //----------------------------------------------------------------------------------
 // Defines and Macros
 //----------------------------------------------------------------------------------
+// In case this file is included, we are using raudio in standalone mode
+#define RAUDIO_STANDALONE
+
 // Allow custom memory allocators
 #ifndef RL_MALLOC
     #define RL_MALLOC(sz)       malloc(sz)
@@ -155,6 +158,7 @@ int GetSoundsPlaying(void);                                     // Get number of
 bool IsSoundPlaying(Sound sound);                               // Check if a sound is currently playing
 void SetSoundVolume(Sound sound, float volume);                 // Set volume for a sound (1.0 is max level)
 void SetSoundPitch(Sound sound, float pitch);                   // Set pitch for a sound (1.0 is base level)
+void SetSoundPan(Sound sound, float pan);                       // Set pan for a sound (0.0 to 1.0, 0.5=center)
 void WaveFormat(Wave *wave, int sampleRate, int sampleSize, int channels);  // Convert wave data to desired format
 Wave WaveCopy(Wave wave);                                       // Copy a wave to a new wave
 void WaveCrop(Wave *wave, int initSample, int finalSample);     // Crop a wave to defined samples range
@@ -173,6 +177,7 @@ void PauseMusicStream(Music music);                             // Pause music p
 void ResumeMusicStream(Music music);                            // Resume playing paused music
 void SeekMusicStream(Music music, float position);              // Seek music to a position (in seconds)
 void SetMusicVolume(Music music, float volume);                 // Set volume for music (1.0 is max level)
+void SetMusicPan(Music sound, float pan);                       // Set pan for a music (0.0 to 1.0, 0.5=center)
 void SetMusicPitch(Music music, float pitch);                   // Set pitch for a music (1.0 is base level)
 float GetMusicTimeLength(Music music);                          // Get music time length (in seconds)
 float GetMusicTimePlayed(Music music);                          // Get current music time played (in seconds)
@@ -180,7 +185,7 @@ float GetMusicTimePlayed(Music music);                          // Get current m
 // AudioStream management functions
 AudioStream LoadAudioStream(unsigned int sampleRate, unsigned int sampleSize, unsigned int channels); // Load audio stream (to stream raw audio pcm data)
 void UpdateAudioStream(AudioStream stream, const void *data, int samplesCount); // Update audio stream buffers with data
-void UnloadAudioStream(AudioStream stream);                      // Unload audio stream and free memory
+void UnloadAudioStream(AudioStream stream);                     // Unload audio stream and free memory
 bool IsAudioStreamProcessed(AudioStream stream);                // Check if any audio stream buffers requires refill
 void PlayAudioStream(AudioStream stream);                       // Play audio stream
 void PauseAudioStream(AudioStream stream);                      // Pause audio stream
@@ -189,6 +194,7 @@ bool IsAudioStreamPlaying(AudioStream stream);                  // Check if audi
 void StopAudioStream(AudioStream stream);                       // Stop audio stream
 void SetAudioStreamVolume(AudioStream stream, float volume);    // Set volume for audio stream (1.0 is max level)
 void SetAudioStreamPitch(AudioStream stream, float pitch);      // Set pitch for audio stream (1.0 is base level)
+void SetAudioStreamPan(AudioStream strean, float pan);          // Set pan for audio stream  (0.0 to 1.0, 0.5=center)
 void SetAudioStreamBufferSizeDefault(int size);                 // Default size for new audio streams
 
 #ifdef __cplusplus
