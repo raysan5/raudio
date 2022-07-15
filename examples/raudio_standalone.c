@@ -62,8 +62,8 @@
 // Module Functions Declaration
 //----------------------------------------------------------------------------------
 #if !defined(_WIN32)
-static int kbhit(void);             // Check if a key has been pressed
-static char getch();                // Get pressed character
+static int kbhit(void);         // Check if a key has been pressed
+static char getch();            // Get pressed character
 #else
 #define kbhit _kbhit
 #define getch _getch
