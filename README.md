@@ -1,4 +1,4 @@
-<img align="left" src="logo/raygui_256x256.png" width=256>
+<img align="left" src="logo/raudio_256x256.png" width=256>
 
 **raudio is simple and easy-to-use audio library based on miniaudio.**
 
