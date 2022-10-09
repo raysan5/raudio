@@ -73,13 +73,14 @@
 //----------------------------------------------------------------------------------
 // Types and Structures Definition
 //----------------------------------------------------------------------------------
-#ifndef __cplusplus
-// Boolean type
-    #if !defined(_STDBOOL_H)
-        typedef enum { false, true } bool;
-        #define _STDBOOL_H
-    #endif
+#if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
+    #include <stdbool.h>
+#elif !defined(__cplusplus) && !defined(bool)
+    typedef enum bool { false = 0, true = !false } bool;
+    #define RL_BOOL_TYPE
 #endif
+
+typedef void (*AudioCallback)(void *bufferData, unsigned int frames);
 
 // Wave, audio wave data
 typedef struct Wave {
@@ -91,6 +92,7 @@ typedef struct Wave {
 } Wave;
 
 typedef struct rAudioBuffer rAudioBuffer;
+typedef struct rAudioProcessor rAudioProcessor;
 
 // AudioStream, custom audio stream
 typedef struct AudioStream {
@@ -167,7 +169,7 @@ void UnloadWaveSamples(float *samples);                         // Unload sample
 
 // Music management functions
 Music LoadMusicStream(const char *fileName);                    // Load music stream from file
-Music LoadMusicStreamFromMemory(const char *fileType, unsigned char* data, int dataSize); // Load music stream from data
+Music LoadMusicStreamFromMemory(const char *fileType, const unsigned char* data, int dataSize); // Load music stream from data
 void UnloadMusicStream(Music music);                            // Unload music stream
 void PlayMusicStream(Music music);                              // Start music playing
 bool IsMusicStreamPlaying(Music music);                         // Check if music is playing
