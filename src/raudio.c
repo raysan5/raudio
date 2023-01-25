@@ -1152,7 +1152,7 @@ void WaveFormat(Wave *wave, int sampleRate, int sampleSize, int channels)
 
     ma_uint32 frameCountIn = wave->frameCount;
     ma_uint32 frameCount = (ma_uint32)ma_convert_frames(NULL, 0, formatOut, channels, sampleRate, NULL, frameCountIn, formatIn, wave->channels, wave->sampleRate);
-    
+
     if (frameCount == 0)
     {
         TRACELOG(LOG_WARNING, "WAVE: Failed to get frame count for format conversion");
@@ -1726,7 +1726,7 @@ void UpdateMusicStream(Music music)
 
     // On first call of this function we lazily pre-allocated a temp buffer to read audio files/memory data in
     unsigned int pcmSize = subBufferSizeInFrames*music.stream.channels*music.stream.sampleSize/8;
-    if (AUDIO.System.pcmBufferSize < pcmSize) 
+    if (AUDIO.System.pcmBufferSize < pcmSize)
     {
         RL_FREE(AUDIO.System.pcmBuffer);
         AUDIO.System.pcmBuffer = RL_CALLOC(1, pcmSize);
@@ -1743,7 +1743,7 @@ void UpdateMusicStream(Music music)
         if ((music.stream.buffer != NULL) && !music.stream.buffer->isSubBufferProcessed[i]) continue; // No refilling required, move to next sub-buffer
 
         if (framesLeft >= subBufferSizeInFrames) framesToStream = subBufferSizeInFrames;
-        else 
+        else
         {
             framesToStream = framesLeft;
 
@@ -1768,7 +1768,7 @@ void UpdateMusicStream(Music music)
 
                     if (music.stream.sampleSize == 16) drwav_read_pcm_frames_s16((drwav *)music.ctxData, framesLoopingExtra, (short *)AUDIO.System.pcmBuffer + framesToStream*music.stream.channels);
                     else if (music.stream.sampleSize == 32) drwav_read_pcm_frames_f32((drwav *)music.ctxData, framesLoopingExtra, (float *)AUDIO.System.pcmBuffer + framesToStream*music.stream.channels);
-                    
+
                     framesToStream += framesLoopingExtra;
                 }
 
@@ -1788,7 +1788,7 @@ void UpdateMusicStream(Music music)
             case MUSIC_AUDIO_FLAC:
             {
                 // NOTE: Returns the number of samples to process (not required)
-                drflac_read_pcm_frames_s16((drflac *)music.ctxData, frameCountToStream*music.stream.channels, (short *)AUDIO.System.pcm);
+                drflac_read_pcm_frames_s16((drflac *)music.ctxData, framesToStream*music.stream.channels, (short *)AUDIO.System.pcmBuffer);
 
                 // drflac_seek_to_pcm_frame((drflac *)music.ctxData, 0);
 
