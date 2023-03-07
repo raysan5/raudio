@@ -355,11 +355,6 @@ typedef struct AudioData {
         AudioBuffer *last;          // Pointer to last AudioBuffer in the list
         int defaultSize;            // Default audio buffer size for audio streams
     } Buffer;
-    struct {
-        unsigned int poolCounter;                               // AudioBuffer pointers pool counter
-        AudioBuffer *pool[MAX_AUDIO_BUFFER_POOL_CHANNELS];      // Multichannel AudioBuffer pointers pool
-        unsigned int channels[MAX_AUDIO_BUFFER_POOL_CHANNELS];  // AudioBuffer pool channels
-    } MultiChannel;
 } AudioData;
 
 //----------------------------------------------------------------------------------
@@ -465,13 +460,6 @@ void InitAudioDevice(void)
         ma_device_uninit(&AUDIO.System.device);
         ma_context_uninit(&AUDIO.System.context);
         return;
-    }
-
-    // Init dummy audio buffers pool for multichannel sound playing
-    for (int i = 0; i < MAX_AUDIO_BUFFER_POOL_CHANNELS; i++)
-    {
-        // WARNING: An empty audio buffer is created (data = 0) and added to list, AudioBuffer data is filled on PlaySoundMulti()
-        AUDIO.MultiChannel.pool[i] = LoadAudioBuffer(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.sampleRate, 0, AUDIO_BUFFER_USAGE_STATIC);
     }
 
     TRACELOG(LOG_INFO, "AUDIO: Device initialized successfully");
@@ -1018,88 +1006,6 @@ bool ExportWaveAsCode(Wave wave, const char *fileName)
 void PlaySound(Sound sound)
 {
     PlayAudioBuffer(sound.stream.buffer);
-}
-
-// Play a sound in the multichannel buffer pool
-void PlaySoundMulti(Sound sound)
-{
-    int index = -1;
-    unsigned int oldAge = 0;
-    int oldIndex = -1;
-
-    // find the first non playing pool entry
-    for (int i = 0; i < MAX_AUDIO_BUFFER_POOL_CHANNELS; i++)
-    {
-        if (AUDIO.MultiChannel.channels[i] > oldAge)
-        {
-            oldAge = AUDIO.MultiChannel.channels[i];
-            oldIndex = i;
-        }
-
-        if (!IsAudioBufferPlaying(AUDIO.MultiChannel.pool[i]))
-        {
-            index = i;
-            break;
-        }
-    }
-
-    // If no none playing pool members can be index choose the oldest
-    if (index == -1)
-    {
-        TRACELOG(LOG_WARNING, "SOUND: Buffer pool is already full, count: %i", AUDIO.MultiChannel.poolCounter);
-
-        if (oldIndex == -1)
-        {
-            // Shouldn't be able to get here... but just in case something odd happens!
-            TRACELOG(LOG_WARNING, "SOUND: Buffer pool could not determine oldest buffer not playing sound");
-            return;
-        }
-
-        index = oldIndex;
-
-        // Just in case...
-        StopAudioBuffer(AUDIO.MultiChannel.pool[index]);
-    }
-
-    // Experimentally mutex lock doesn't seem to be needed this makes sense
-    // as pool[index] isn't playing and the only stuff we're copying
-    // shouldn't be changing...
-
-    AUDIO.MultiChannel.channels[index] = AUDIO.MultiChannel.poolCounter;
-    AUDIO.MultiChannel.poolCounter++;
-
-    SetAudioBufferVolume(AUDIO.MultiChannel.pool[index], sound.stream.buffer->volume);
-    SetAudioBufferPitch(AUDIO.MultiChannel.pool[index], sound.stream.buffer->pitch);
-    SetAudioBufferPan(AUDIO.MultiChannel.pool[index], sound.stream.buffer->pan);
-
-    AUDIO.MultiChannel.pool[index]->looping = sound.stream.buffer->looping;
-    AUDIO.MultiChannel.pool[index]->usage = sound.stream.buffer->usage;
-    AUDIO.MultiChannel.pool[index]->isSubBufferProcessed[0] = false;
-    AUDIO.MultiChannel.pool[index]->isSubBufferProcessed[1] = false;
-    AUDIO.MultiChannel.pool[index]->sizeInFrames = sound.stream.buffer->sizeInFrames;
-
-    AUDIO.MultiChannel.pool[index]->data = sound.stream.buffer->data;       // Fill dummy track with data for playing
-
-    PlayAudioBuffer(AUDIO.MultiChannel.pool[index]);
-}
-
-// Stop any sound played with PlaySoundMulti()
-void StopSoundMulti(void)
-{
-    for (int i = 0; i < MAX_AUDIO_BUFFER_POOL_CHANNELS; i++) StopAudioBuffer(AUDIO.MultiChannel.pool[i]);
-}
-
-// Get number of sounds playing in the multichannel buffer pool
-int GetSoundsPlaying(void)
-{
-    int counter = 0;
-
-    for (int i = 0; i < MAX_AUDIO_BUFFER_POOL_CHANNELS; i++)
-    {
-        if (IsAudioBufferPlaying(AUDIO.MultiChannel.pool[i])) counter++;
-    }
-
-    return counter;
 }
 
 // Pause a sound
