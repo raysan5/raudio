@@ -13,7 +13,7 @@
 ## features
 
  - Simplifies `miniaudio` usage exposing only basic functionality
- - Audio formats supported: `.wav`, `.ogg`, `.mp3`, `.flac`, `.xm` and `.mod`.
+ - Audio formats supported: `.wav`, `.qoa`, `.ogg`, `.mp3`, `.flac`, `.xm`, `.mod`
  - Select desired input formats at compilation time
  - Load and play audio, static or streamed modes
  - Support for plugable audio effects with callbacks
