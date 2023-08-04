@@ -57,7 +57,9 @@
 // Defines and Macros
 //----------------------------------------------------------------------------------
 // In case this file is included, we are using raudio in standalone mode
+#ifndef RAUDIO_STANDALONE
 #define RAUDIO_STANDALONE
+#endif // RAUDIO_STANDALONE
 
 // Allow custom memory allocators
 #ifndef RL_MALLOC
