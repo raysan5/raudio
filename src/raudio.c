@@ -187,6 +187,16 @@ typedef struct tagBITMAPINFOHEADER {
     #define MA_NO_RUNTIME_LINKING
 	#include <SDL2/SDL.h>
 	#include "external/backend_sdl.h"
+#else
+    typedef struct
+    {
+        ma_context context;
+    } ma_context_ex;
+
+    typedef struct
+    {
+        ma_device device;
+    } ma_device_ex;
 #endif
 #undef PlaySound                        // Win32 API: windows.h > mmsystem.h defines PlaySound macro
 
@@ -385,13 +395,8 @@ struct rAudioProcessor {
 // Audio data context
 typedef struct AudioData {
     struct {
-        #if defined(PLATFORM_SDL)
-        ma_context_ex context;
-        ma_device_ex device;
-        #else
-        ma_context context;         // miniaudio context data
-        ma_device device;           // miniaudio device
-        #endif
+        ma_context_ex context_ex;
+        ma_device_ex device_ex;
         ma_mutex lock;              // miniaudio mutex lock
         bool isReady;               // Check if audio device is ready
         size_t pcmBufferSize;       // Pre-allocated buffer size
@@ -467,9 +472,9 @@ void InitAudioDevice(void)
         ma_backend_custom
     };
     ctxConfig.custom.onContextInit = ma_context_init__custom_loader;
-    ma_result result = ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), &ctxConfig, (ma_context*)&AUDIO.System.context);
+    ma_result result = ma_context_init(backends, sizeof(backends)/sizeof(backends[0]), &ctxConfig, (ma_context*)&AUDIO.System.context_ex.context);
     #else
-        ma_result result = ma_context_init(NULL, 0, &ctxConfig, &AUDIO.System.context);
+        ma_result result = ma_context_init(NULL, 0, &ctxConfig, &AUDIO.System.context_ex.context);
     #endif
     if (result != MA_SUCCESS)
     {
@@ -490,22 +495,22 @@ void InitAudioDevice(void)
     config.dataCallback = OnSendAudioDataToDevice;
     config.pUserData = NULL;
 
-    result = ma_device_init((ma_context*)&AUDIO.System.context, &config, (ma_device*)&AUDIO.System.device);
+    result = ma_device_init((ma_context*)&AUDIO.System.context_ex.context, &config, (ma_device*)&AUDIO.System.device_ex.device);
     if (result != MA_SUCCESS)
     {
         TRACELOG(LOG_WARNING, "AUDIO: Failed to initialize playback device");
-        ma_context_uninit((ma_context*)&AUDIO.System.context);
+        ma_context_uninit((ma_context*)&AUDIO.System.context_ex.context);
         return;
     }
 
     // Keep the device running the whole time. May want to consider doing something a bit smarter and only have the device running
     // while there's at least one sound being played.
-    result = ma_device_start((ma_device*)&AUDIO.System.device);
+    result = ma_device_start((ma_device*)&AUDIO.System.device_ex.device);
     if (result != MA_SUCCESS)
     {
         TRACELOG(LOG_WARNING, "AUDIO: Failed to start playback device");
-        ma_device_uninit((ma_device*)&AUDIO.System.device);
-        ma_context_uninit((ma_context*)&AUDIO.System.context);
+        ma_device_uninit((ma_device*)&AUDIO.System.device_ex.device);
+        ma_context_uninit((ma_context*)&AUDIO.System.context_ex.context);
         return;
     }
 
@@ -514,26 +519,18 @@ void InitAudioDevice(void)
     if (ma_mutex_init(&AUDIO.System.lock) != MA_SUCCESS)
     {
         TRACELOG(LOG_WARNING, "AUDIO: Failed to create mutex for mixing");
-        ma_device_uninit((ma_device*)&AUDIO.System.device);
-        ma_context_uninit((ma_context*)&AUDIO.System.context);
+        ma_device_uninit((ma_device*)&AUDIO.System.device_ex.device);
+        ma_context_uninit((ma_context*)&AUDIO.System.context_ex.context);
         return;
     }
 
-    #if defined(PLATFORM_SDL)
     TRACELOG(LOG_INFO, "AUDIO: Device initialized successfully");
-    TRACELOG(LOG_INFO, "    > Backend:       miniaudio / %s", ma_get_backend_name(AUDIO.System.context.context.backend));
-    TRACELOG(LOG_INFO, "    > Format:        %s -> %s", ma_get_format_name(AUDIO.System.device.device.playback.format), ma_get_format_name(AUDIO.System.device.device.playback.internalFormat));
-    TRACELOG(LOG_INFO, "    > Channels:      %d -> %d", AUDIO.System.device.device.playback.channels, AUDIO.System.device.device.playback.internalChannels);
-    TRACELOG(LOG_INFO, "    > Sample rate:   %d -> %d", AUDIO.System.device.device.sampleRate, AUDIO.System.device.device.playback.internalSampleRate);
-    TRACELOG(LOG_INFO, "    > Periods size:  %d", AUDIO.System.device.device.playback.internalPeriodSizeInFrames*AUDIO.System.device.device.playback.internalPeriods);
-    #else
-    TRACELOG(LOG_INFO, "AUDIO: Device initialized successfully");
-    TRACELOG(LOG_INFO, "    > Backend:       miniaudio / %s", ma_get_backend_name(AUDIO.System.context.backend));
-    TRACELOG(LOG_INFO, "    > Format:        %s -> %s", ma_get_format_name(AUDIO.System.device.playback.format), ma_get_format_name(AUDIO.System.device.playback.internalFormat));
-    TRACELOG(LOG_INFO, "    > Channels:      %d -> %d", AUDIO.System.device.playback.channels, AUDIO.System.device.playback.internalChannels);
-    TRACELOG(LOG_INFO, "    > Sample rate:   %d -> %d", AUDIO.System.device.sampleRate, AUDIO.System.device.playback.internalSampleRate);
-    TRACELOG(LOG_INFO, "    > Periods size:  %d", AUDIO.System.device.playback.internalPeriodSizeInFrames*AUDIO.System.device.playback.internalPeriods);
-    #endif
+    TRACELOG(LOG_INFO, "    > Backend:       miniaudio / %s", ma_get_backend_name(AUDIO.System.context_ex.context.backend));
+    TRACELOG(LOG_INFO, "    > Format:        %s -> %s", ma_get_format_name(AUDIO.System.device_ex.device.playback.format), ma_get_format_name(AUDIO.System.device_ex.device.playback.internalFormat));
+    TRACELOG(LOG_INFO, "    > Channels:      %d -> %d", AUDIO.System.device_ex.device.playback.channels, AUDIO.System.device_ex.device.playback.internalChannels);
+    TRACELOG(LOG_INFO, "    > Sample rate:   %d -> %d", AUDIO.System.device_ex.device.sampleRate, AUDIO.System.device_ex.device.playback.internalSampleRate);
+    TRACELOG(LOG_INFO, "    > Periods size:  %d", AUDIO.System.device_ex.device.playback.internalPeriodSizeInFrames*AUDIO.System.device_ex.device.playback.internalPeriods);
+
     AUDIO.System.isReady = true;
 }
 
@@ -543,8 +540,8 @@ void CloseAudioDevice(void)
     if (AUDIO.System.isReady)
     {
         ma_mutex_uninit(&AUDIO.System.lock);
-        ma_device_uninit((ma_device*)&AUDIO.System.device);
-        ma_context_uninit((ma_context*)&AUDIO.System.context);
+        ma_device_uninit((ma_device*)&AUDIO.System.device_ex.device);
+        ma_context_uninit((ma_context*)&AUDIO.System.context_ex.context);
 
         AUDIO.System.isReady = false;
         RL_FREE(AUDIO.System.pcmBuffer);
@@ -565,7 +562,7 @@ bool IsAudioDeviceReady(void)
 // Set master volume (listener)
 void SetMasterVolume(float volume)
 {
-    ma_device_set_master_volume((ma_device*)&AUDIO.System.device, volume);
+    ma_device_set_master_volume((ma_device*)&AUDIO.System.device_ex.device, volume);
 }
 
 //----------------------------------------------------------------------------------
@@ -586,11 +583,8 @@ AudioBuffer *LoadAudioBuffer(ma_format format, ma_uint32 channels, ma_uint32 sam
     if (sizeInFrames > 0) audioBuffer->data = RL_CALLOC(sizeInFrames*channels*ma_get_bytes_per_sample(format), 1);
 
     // Audio data runs through a format converter
-    #if defined(PLATFORM_SDL)
-    ma_data_converter_config converterConfig = ma_data_converter_config_init(format, AUDIO_DEVICE_FORMAT, channels, AUDIO_DEVICE_CHANNELS, sampleRate, AUDIO.System.device.device.sampleRate);
-    #else
-    ma_data_converter_config converterConfig = ma_data_converter_config_init(format, AUDIO_DEVICE_FORMAT, channels, AUDIO_DEVICE_CHANNELS, sampleRate, AUDIO.System.device.sampleRate);
-    #endif
+    ma_data_converter_config converterConfig = ma_data_converter_config_init(format, AUDIO_DEVICE_FORMAT, channels, AUDIO_DEVICE_CHANNELS, sampleRate, AUDIO.System.device_ex.device.sampleRate);
+
     converterConfig.allowDynamicSampleRate = true;
 
     ma_result result = ma_data_converter_init(&converterConfig, NULL, &audioBuffer->converter);
@@ -932,37 +926,26 @@ Sound LoadSoundFromWave(Wave wave)
         ma_format formatIn = ((wave.sampleSize == 8)? ma_format_u8 : ((wave.sampleSize == 16)? ma_format_s16 : ma_format_f32));
         ma_uint32 frameCountIn = wave.frameCount;
 
-        #if defined(PLATFORM_SDL)
-        ma_uint32 frameCount = (ma_uint32)ma_convert_frames(NULL, 0, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.device.sampleRate, NULL, frameCountIn, formatIn, wave.channels, wave.sampleRate);
-        #else
-        ma_uint32 frameCount = (ma_uint32)ma_convert_frames(NULL, 0, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.sampleRate, NULL, frameCountIn, formatIn, wave.channels, wave.sampleRate);
-        #endif
+        ma_uint32 frameCount = (ma_uint32)ma_convert_frames(NULL, 0, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device_ex.device.sampleRate, NULL, frameCountIn, formatIn, wave.channels, wave.sampleRate);
+
         if (frameCount == 0) TRACELOG(LOG_WARNING, "SOUND: Failed to get frame count for format conversion");
 
-        #if defined(PLATFORM_SDL)
-        AudioBuffer *audioBuffer = LoadAudioBuffer(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.device.sampleRate, frameCount, AUDIO_BUFFER_USAGE_STATIC);
-        #else
-        AudioBuffer *audioBuffer = LoadAudioBuffer(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.sampleRate, frameCount, AUDIO_BUFFER_USAGE_STATIC);
-        #endif
+        AudioBuffer *audioBuffer = LoadAudioBuffer(AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device_ex.device.sampleRate, frameCount, AUDIO_BUFFER_USAGE_STATIC);
+
         if (audioBuffer == NULL)
         {
             TRACELOG(LOG_WARNING, "SOUND: Failed to create buffer");
             return sound; // early return to avoid dereferencing the audioBuffer null pointer
         }
 
-        #if defined(PLATFORM_SDL)
-        frameCount = (ma_uint32)ma_convert_frames(audioBuffer->data, frameCount, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.device.sampleRate, wave.data, frameCountIn, formatIn, wave.channels, wave.sampleRate);
-        #else
-        frameCount = (ma_uint32)ma_convert_frames(audioBuffer->data, frameCount, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device.sampleRate, wave.data, frameCountIn, formatIn, wave.channels, wave.sampleRate);
-        #endif
+        frameCount = (ma_uint32)ma_convert_frames(audioBuffer->data, frameCount, AUDIO_DEVICE_FORMAT, AUDIO_DEVICE_CHANNELS, AUDIO.System.device_ex.device.sampleRate, wave.data, frameCountIn, formatIn, wave.channels, wave.sampleRate);
+
         if (frameCount == 0) TRACELOG(LOG_WARNING, "SOUND: Failed format conversion");
 
         sound.frameCount = frameCount;
-        #if defined(PLATFORM_SDL)
-        sound.stream.sampleRate = AUDIO.System.device.device.sampleRate;
-        #else
-        sound.stream.sampleRate = AUDIO.System.device.sampleRate;
-        #endif
+
+        sound.stream.sampleRate = AUDIO.System.device_ex.device.sampleRate;
+
         sound.stream.sampleSize = 32;
         sound.stream.channels = AUDIO_DEVICE_CHANNELS;
         sound.stream.buffer = audioBuffer;
@@ -1385,11 +1368,9 @@ Music LoadMusicStream(const char *fileName)
     else if (IsFileExtension(fileName, ".xm"))
     {
         jar_xm_context_t *ctxXm = NULL;
-        #if defined(PLATFORM_SDL)
-        int result = jar_xm_create_context_from_file(&ctxXm, AUDIO.System.device.device.sampleRate, fileName);
-        #else
-        int result = jar_xm_create_context_from_file(&ctxXm, AUDIO.System.device.sampleRate, fileName);
-        #endif
+
+        int result = jar_xm_create_context_from_file(&ctxXm, AUDIO.System.device_ex.device.sampleRate, fileName);
+
 
         music.ctxType = MUSIC_MODULE_XM;
         music.ctxData = ctxXm;
@@ -1403,11 +1384,7 @@ Music LoadMusicStream(const char *fileName)
             else if (AUDIO_DEVICE_FORMAT == ma_format_u8) bits = 8;
 
             // NOTE: Only stereo is supported for XM
-            #if defined(PLATFORM_SDL)
-            music.stream = LoadAudioStream(AUDIO.System.device.device.sampleRate, bits, AUDIO_DEVICE_CHANNELS);
-            #else
-            music.stream = LoadAudioStream(AUDIO.System.device.sampleRate, bits, AUDIO_DEVICE_CHANNELS);
-            #endif
+            music.stream = LoadAudioStream(AUDIO.System.device_ex.device.sampleRate, bits, AUDIO_DEVICE_CHANNELS);
             music.frameCount = (unsigned int)jar_xm_get_remaining_samples(ctxXm);    // NOTE: Always 2 channels (stereo)
             music.looping = true;   // Looping enabled by default
             jar_xm_reset(ctxXm);    // make sure we start at the beginning of the song
@@ -1428,11 +1405,7 @@ Music LoadMusicStream(const char *fileName)
         if (result > 0)
         {
             // NOTE: Only stereo is supported for MOD
-            #if defined(PLATFORM_SDL)
-            music.stream = LoadAudioStream(AUDIO.System.device.device.sampleRate, 16, AUDIO_DEVICE_CHANNELS);
-            #else
             music.stream = LoadAudioStream(AUDIO.System.device.sampleRate, 16, AUDIO_DEVICE_CHANNELS);
-            #endif
             music.frameCount = (unsigned int)jar_mod_max_samples(ctxMod);    // NOTE: Always 2 channels (stereo)
             music.looping = true;   // Looping enabled by default
             musicLoaded = true;
@@ -1591,11 +1564,9 @@ Music LoadMusicStreamFromMemory(const char *fileType, const unsigned char *data,
     else if (strcmp(fileType, ".xm") == 0)
     {
         jar_xm_context_t *ctxXm = NULL;
-        #if defined(PLATFORM_SDL)
-        int result = jar_xm_create_context_safe(&ctxXm, (const char *)data, dataSize, AUDIO.System.device.device.sampleRate);
-        #else
-        int result = jar_xm_create_context_safe(&ctxXm, (const char *)data, dataSize, AUDIO.System.device.sampleRate);
-        #endif
+
+        int result = jar_xm_create_context_safe(&ctxXm, (const char *)data, dataSize, AUDIO.System.device_ex.device.sampleRate);
+
         if (result == 0)    // XM AUDIO.System.context created successfully
         {
             music.ctxType = MUSIC_MODULE_XM;
@@ -1606,11 +1577,7 @@ Music LoadMusicStreamFromMemory(const char *fileType, const unsigned char *data,
             else if (AUDIO_DEVICE_FORMAT == ma_format_u8) bits = 8;
 
             // NOTE: Only stereo is supported for XM
-            #if defined(PLATFORM_SDL)
-            music.stream = LoadAudioStream(AUDIO.System.device.device.sampleRate, bits, 2);
-            #else
-            music.stream = LoadAudioStream(AUDIO.System.device.sampleRate, bits, 2);
-            #endif
+            music.stream = LoadAudioStream(AUDIO.System.device_ex.device.sampleRate, bits, 2);
             music.frameCount = (unsigned int)jar_xm_get_remaining_samples(ctxXm);    // NOTE: Always 2 channels (stereo)
             music.looping = true;   // Looping enabled by default
             jar_xm_reset(ctxXm);    // make sure we start at the beginning of the song
@@ -1646,11 +1613,7 @@ Music LoadMusicStreamFromMemory(const char *fileType, const unsigned char *data,
             music.ctxType = MUSIC_MODULE_MOD;
 
             // NOTE: Only stereo is supported for MOD
-            #if defined(PLATFORM_SDL)
-            music.stream = LoadAudioStream(AUDIO.System.device.device.sampleRate, 16, 2);
-            #else
             music.stream = LoadAudioStream(AUDIO.System.device.sampleRate, 16, 2);
-            #endif
             music.frameCount = (unsigned int)jar_mod_max_samples(ctxMod);    // NOTE: Always 2 channels (stereo)
             music.looping = true;   // Looping enabled by default
             musicLoaded = true;
@@ -2077,18 +2040,10 @@ AudioStream LoadAudioStream(unsigned int sampleRate, unsigned int sampleSize, un
     ma_format formatIn = ((stream.sampleSize == 8)? ma_format_u8 : ((stream.sampleSize == 16)? ma_format_s16 : ma_format_f32));
 
     // The size of a streaming buffer must be at least double the size of a period
-    #if defined(PLATFORM_SDL)
-    unsigned int periodSize = AUDIO.System.device.device.playback.internalPeriodSizeInFrames;
-    #else
-    unsigned int periodSize = AUDIO.System.device.playback.internalPeriodSizeInFrames;
-    #endif
+    unsigned int periodSize = AUDIO.System.device_ex.device.playback.internalPeriodSizeInFrames;
 
     // If the buffer is not set, compute one that would give us a buffer good enough for a decent frame rate
-    #if defined(PLATFORM_SDL)
-    unsigned int subBufferSize = (AUDIO.Buffer.defaultSize == 0)? AUDIO.System.device.device.sampleRate/30 : AUDIO.Buffer.defaultSize;
-    #else
-    unsigned int subBufferSize = (AUDIO.Buffer.defaultSize == 0)? AUDIO.System.device.sampleRate/30 : AUDIO.Buffer.defaultSize;
-    #endif
+    unsigned int subBufferSize = (AUDIO.Buffer.defaultSize == 0)? AUDIO.System.device_ex.device.sampleRate/30 : AUDIO.Buffer.defaultSize;
 
     if (subBufferSize < periodSize) subBufferSize = periodSize;
 
@@ -2541,11 +2496,7 @@ static void OnSendAudioDataToDevice(ma_device *pDevice, void *pFramesOut, const 
                     ma_uint32 framesJustRead = ReadAudioBufferFramesInMixingFormat(audioBuffer, tempBuffer, framesToReadRightNow);
                     if (framesJustRead > 0)
                     {
-                        #if defined(PLATFORM_SDL)
-                        float *framesOut = (float *)pFramesOut + (framesRead*AUDIO.System.device.device.playback.channels);
-                        #else
-                        float *framesOut = (float *)pFramesOut + (framesRead*AUDIO.System.device.playback.channels);
-                        #endif
+                        float *framesOut = (float *)pFramesOut + (framesRead*AUDIO.System.device_ex.device.playback.channels);
                         float *framesIn = tempBuffer;
 
                         // Apply processors chain if defined
@@ -2608,11 +2559,7 @@ static void OnSendAudioDataToDevice(ma_device *pDevice, void *pFramesOut, const 
 static void MixAudioFrames(float *framesOut, const float *framesIn, ma_uint32 frameCount, AudioBuffer *buffer)
 {
     const float localVolume = buffer->volume;
-    #if defined(PLATFORM_SDL)
-    const ma_uint32 channels = AUDIO.System.device.device.playback.channels;
-    #else
-    const ma_uint32 channels = AUDIO.System.device.playback.channels;
-    #endif
+    const ma_uint32 channels = AUDIO.System.device_ex.device.playback.channels;
 
     if (channels == 2)  // We consider panning
     {
