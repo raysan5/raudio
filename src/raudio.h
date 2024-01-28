@@ -4,15 +4,16 @@
 *
 *   FEATURES:
 *       - Manage audio device (init/close)
+*       - Manage raw audio context
+*       - Manage mixing channels
 *       - Load and unload audio files
 *       - Format wave data (sample rate, size, channels)
 *       - Play/Stop/Pause/Resume loaded audio
-*       - Manage mixing channels
-*       - Manage raw audio context
 *
 *   DEPENDENCIES:
-*       miniaudio.h  - Audio device management lib (https://github.com/dr-soft/miniaudio)
+*       miniaudio.h  - Audio device management lib (https://github.com/mackron/miniaudio)
 *       stb_vorbis.h - Ogg audio files loading (http://www.nothings.org/stb_vorbis/)
+*       dr_wav.h     - WAV audio files loading (http://github.com/mackron/dr_libs)
 *       dr_mp3.h     - MP3 audio file loading (https://github.com/mackron/dr_libs)
 *       dr_flac.h    - FLAC audio file loading (https://github.com/mackron/dr_libs)
 *       jar_xm.h     - XM module file loading
@@ -22,7 +23,7 @@
 *       David Reid (github: @mackron) (Nov. 2017):
 *           - Complete port to miniaudio library
 *
-*       Joshua Reisenauer (github: @kd7tck) (2015)
+*       Joshua Reisenauer (github: @kd7tck) (2015):
 *           - XM audio module support (jar_xm)
 *           - MOD audio module support (jar_mod)
 *           - Mixing channels support
@@ -31,7 +32,7 @@
 *
 *   LICENSE: zlib/libpng
 *
-*   Copyright (c) 2014-2024 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2013-2024 Ramon Santamaria (@raysan5)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -141,6 +142,7 @@ void InitAudioDevice(void);                                     // Initialize au
 void CloseAudioDevice(void);                                    // Close the audio device and context
 bool IsAudioDeviceReady(void);                                  // Check if audio device has been initialized successfully
 void SetMasterVolume(float volume);                             // Set master volume (listener)
+float GetMasterVolume(void);                                    // Get master volume (listener)
 
 // Wave/Sound loading/unloading functions
 Wave LoadWave(const char *fileName);                            // Load wave data from file
@@ -148,10 +150,12 @@ Wave LoadWaveFromMemory(const char *fileType, const unsigned char *fileData, int
 bool IsWaveReady(Wave wave);                                    // Checks if wave data is ready
 Sound LoadSound(const char *fileName);                          // Load sound from file
 Sound LoadSoundFromWave(Wave wave);                             // Load sound from wave data
+Sound LoadSoundAlias(Sound source);                             // Create a new sound that shares the same sample data as the source sound, does not own the sound data
 bool IsSoundReady(Sound sound);                                 // Checks if a sound is ready
-void UpdateSound(Sound sound, const void *data, int samplesCount);// Update sound buffer with new data
+void UpdateSound(Sound sound, const void *data, int frameCount);// Update sound buffer with new data
 void UnloadWave(Wave wave);                                     // Unload wave data
 void UnloadSound(Sound sound);                                  // Unload sound
+void UnloadSoundAlias(Sound alias);                             // Unload a sound alias (does not deallocate sample data)
 bool ExportWave(Wave wave, const char *fileName);               // Export wave data to file, returns true on success
 bool ExportWaveAsCode(Wave wave, const char *fileName);         // Export wave sample data to code (.h), returns true on success
 
