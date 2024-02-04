@@ -440,7 +440,7 @@ void SetAudioBufferVolume(AudioBuffer *buffer, float volume);
 void SetAudioBufferPitch(AudioBuffer *buffer, float pitch);
 void SetAudioBufferPan(AudioBuffer *buffer, float pan);
 void TrackAudioBuffer(AudioBuffer *buffer);
-void UntrackAudioBuffer(AudioBuffer *buffer);
+void UntrackAudioBuffer(AudioBuffer *buffer, bool freeSampleData);
 
 //----------------------------------------------------------------------------------
 // Module Functions Definition - Audio Device initialization and Closing
@@ -610,13 +610,7 @@ AudioBuffer *LoadAudioBuffer(ma_format format, ma_uint32 channels, ma_uint32 sam
 // Delete an audio buffer
 void UnloadAudioBuffer(AudioBuffer *buffer)
 {
-    if (buffer != NULL)
-    {
-        ma_data_converter_uninit(&buffer->converter, NULL);
-        UntrackAudioBuffer(buffer);
-        RL_FREE(buffer->data);
-        RL_FREE(buffer);
-    }
+    UntrackAudioBuffer(buffer, true);
 }
 
 // Check if an audio buffer is playing
@@ -720,18 +714,28 @@ void TrackAudioBuffer(AudioBuffer *buffer)
 }
 
 // Untrack audio buffer from linked list
-void UntrackAudioBuffer(AudioBuffer *buffer)
+void UntrackAudioBuffer(AudioBuffer *buffer, bool freeSampleData)
 {
     ma_mutex_lock(&AUDIO.System.lock);
     {
-        if (buffer->prev == NULL) AUDIO.Buffer.first = buffer->next;
-        else buffer->prev->next = buffer->next;
+        if (NULL != buffer)
+        {
+            ma_data_converter_uninit(&buffer->converter, NULL);
 
-        if (buffer->next == NULL) AUDIO.Buffer.last = buffer->prev;
-        else buffer->next->prev = buffer->prev;
+            if (buffer->prev == NULL) AUDIO.Buffer.first = buffer->next;
+            else buffer->prev->next = buffer->next;
 
-        buffer->prev = NULL;
-        buffer->next = NULL;
+            if (buffer->next == NULL) AUDIO.Buffer.last = buffer->prev;
+            else buffer->next->prev = buffer->prev;
+
+            buffer->prev = NULL;
+            buffer->next = NULL;
+
+            if (freeSampleData && NULL != buffer->data)
+                RL_FREE(buffer->data);
+
+            RL_FREE(buffer);
+        }
     }
     ma_mutex_unlock(&AUDIO.System.lock);
 }
@@ -991,12 +995,7 @@ void UnloadSound(Sound sound)
 void UnloadSoundAlias(Sound alias)
 {
     // Untrack and unload just the sound buffer, not the sample data, it is shared with the source for the alias
-    if (alias.stream.buffer != NULL)
-    {
-        ma_data_converter_uninit(&alias.stream.buffer->converter, NULL);
-        UntrackAudioBuffer(alias.stream.buffer);
-        RL_FREE(alias.stream.buffer);
-    }
+    UntrackAudioBuffer(alias.stream.buffer, false);
 }
 
 // Update sound buffer with new data
