@@ -41,9 +41,11 @@ target_compile_definitions(raudio PUBLIC
 )
 
 # Dependenices
-target_link_libraries(raudio
-    m # math
-)
+if(NOT MSVC)
+    target_link_libraries(raudio
+        m # math
+    )
+endif()
 
 # Audio file support options
 if (SUPPORT_FILEFORMAT_WAV)
