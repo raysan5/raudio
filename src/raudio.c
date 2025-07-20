@@ -185,8 +185,12 @@ typedef struct tagBITMAPINFOHEADER {
 #include <string.h>                     // Required for: strcmp() [Used in IsFileExtension(), LoadWaveFromMemory(), LoadMusicStreamFromMemory()]
 
 #if defined(RAUDIO_STANDALONE)
-    #ifndef TRACELOG
-        #define TRACELOG(level, ...)    printf(__VA_ARGS__)
+    #ifndef RAUDIO_DISABLE_DEFAULT_LOG
+        #ifndef TRACELOG
+            #define TRACELOG(level, ...)    printf(__VA_ARGS__)
+        #endif
+    #else
+        #define TRACELOG(level, ...)        ((void)0)
     #endif
 
     // Allow custom memory allocators
