@@ -18,6 +18,7 @@ set(RAUDIO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 set(RAUDIO_SRC ${RAUDIO_ROOT}/src)
 set(RAUDIO_EXAMPLES ${RAUDIO_ROOT}/examples)
 
+option(DISABLE_DEFAULT_LOG "Disable default logging" ON)
 option(SUPPORT_FILEFORMAT_WAV "WAV Support" TRUE)
 option(SUPPORT_FILEFORMAT_OGG "OGG Support" TRUE)
 option(SUPPORT_FILEFORMAT_MP3 "MP3 Support" TRUE)
@@ -41,9 +42,16 @@ target_compile_definitions(raudio PUBLIC
 )
 
 # Dependenices
-target_link_libraries(raudio
-    m # math
-)
+if(NOT MSVC)
+    target_link_libraries(raudio
+        m # math
+    )
+endif()
+
+# Disable default logging option
+if (DISABLE_DEFAULT_LOG)
+    target_compile_definitions(raudio PUBLIC "RAUDIO_DISABLE_DEFAULT_LOG")
+endif()
 
 # Audio file support options
 if (SUPPORT_FILEFORMAT_WAV)
